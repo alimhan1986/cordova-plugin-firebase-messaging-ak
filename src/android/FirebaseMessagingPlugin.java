@@ -87,7 +87,7 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
 
     @CordovaMethod
     private void getNotifications(CallbackContext callbackContext) {
-        StatusBarNotification nots[]  = notificationManager.getActiveNotifications();
+        StatusBarNotification[] nots  = notificationManager.getActiveNotifications();
         JSONObject result = new JSONObject();
         for (StatusBarNotification not : nots) {
             result.put(not.id , "{\"tag\": \"" + not.tag + "\", \"id\": \"" + not.id + "\", \"notification\": \"" + not.notification.toString() + "\"}");
