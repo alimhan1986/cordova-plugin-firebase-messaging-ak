@@ -90,7 +90,7 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
         StatusBarNotification[] nots  = notificationManager.getActiveNotifications();
         JSONObject result = new JSONObject();
         for (StatusBarNotification not : nots) {
-            result.put(not.getTag(), not.getNotification.toString());
+            result.put(not.getTag(), not.getNotification().toString());
         }
         callbackContext.success(result);
     }
