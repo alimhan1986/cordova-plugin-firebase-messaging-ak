@@ -2,6 +2,7 @@ package by.chemerisuk.cordova.firebase;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.service.notification.StatusBarNotification;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -82,6 +83,16 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
         notificationManager.cancelAll();
 
         callbackContext.success();
+    }
+
+    @CordovaMethod
+    private void getNotifications(CallbackContext callbackContext) {
+        StatusBarNotification nots[]  = notificationManager.getActiveNotifications();
+        JSONObject result = new JSONObject();
+        for (StatusBarNotification not : nots) {
+            result.put(not.id , "{\"tag\": \"" + not.tag + "\", \"notification\": \"" + not.notification.toString() + "\"}";
+        }
+        callbackContext.success(result);
     }
 
     @CordovaMethod
