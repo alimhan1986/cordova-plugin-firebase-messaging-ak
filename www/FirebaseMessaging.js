@@ -25,9 +25,6 @@ module.exports = {
   clearNotifications: function (callack, error) {
     exec(callack, error, PLUGIN_NAME, "clearNotifications", []);
   },
-  getNotifications: function (callack, error) {
-    exec(callack, error, PLUGIN_NAME, "getNotifications", []);
-  },
   cancelNotification: function (tag) {
     return new Promise(function (resolve, reject) {
       exec(resolve, reject, PLUGIN_NAME, "cancelNotification", [tag]);
