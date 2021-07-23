@@ -28,8 +28,10 @@ module.exports = {
   getNotifications: function (callack, error) {
     exec(callack, error, PLUGIN_NAME, "getNotifications", []);
   },
-  cancelNotification: function (tag, callack, error) {
-    exec(callack, error, PLUGIN_NAME, "cancelNotification", [tag]);
+  cancelNotification: function (tag) {
+    return new Promise(function (resolve, reject) {
+      exec(resolve, reject, PLUGIN_NAME, "cancelNotification", [tag]);
+    });
   },
   deleteToken: function () {
     return new Promise(function (resolve, reject) {

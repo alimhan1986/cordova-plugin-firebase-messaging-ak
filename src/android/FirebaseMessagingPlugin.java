@@ -101,7 +101,7 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
     }
 
     @CordovaMethod
-    private void cancelNotification(CallbackContext callbackContext, String tag) {
+    private void cancelNotification(String tag, CallbackContext callbackContext) {
         notificationManager.cancel(tag, 0);
         callbackContext.success();
     }
