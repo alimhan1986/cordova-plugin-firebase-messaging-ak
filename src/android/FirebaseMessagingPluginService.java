@@ -76,15 +76,18 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         FirebaseMessagingPlugin.sendNotification(remoteMessage);
+        RemoteMessage.Notification notification = remoteMessage.getNotification();
+        if (notification.getTitle() == "") {
+            notificationManager.cancel(notification.getTag(), 0);
+        } else {
+            Intent intent = new Intent(ACTION_FCM_MESSAGE);
+            intent.putExtra(EXTRA_FCM_MESSAGE, remoteMessage);
+            broadcastManager.sendBroadcast(intent);
 
-        Intent intent = new Intent(ACTION_FCM_MESSAGE);
-        intent.putExtra(EXTRA_FCM_MESSAGE, remoteMessage);
-        broadcastManager.sendBroadcast(intent);
-
-        if (FirebaseMessagingPlugin.isForceShow()) {
-            RemoteMessage.Notification notification = remoteMessage.getNotification();
-            if (notification != null) {
-                showAlert(notification);
+            if (FirebaseMessagingPlugin.isForceShow()) {
+                if (notification != null) {
+                    showAlert(notification);
+                }
             }
         }
     }
