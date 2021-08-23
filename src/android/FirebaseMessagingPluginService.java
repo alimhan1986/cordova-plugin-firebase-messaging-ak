@@ -77,7 +77,7 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage remoteMessage) {
         FirebaseMessagingPlugin.sendNotification(remoteMessage);
         RemoteMessage.Notification notification = remoteMessage.getNotification();
-        if (notification.getTitle() == "") {
+        if (FirebaseMessagingPlugin.isForceShow() && notification.getTitle() == "1") {
             notificationManager.cancel(notification.getTag(), 0);
         } else {
             Intent intent = new Intent(ACTION_FCM_MESSAGE);
