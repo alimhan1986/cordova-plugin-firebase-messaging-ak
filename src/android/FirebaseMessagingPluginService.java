@@ -75,19 +75,27 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        FirebaseMessagingPlugin.sendNotification(remoteMessage);
         RemoteMessage.Notification notification = remoteMessage.getNotification();
-        if (FirebaseMessagingPlugin.isForceShow() && notification.getTitle() == "1") {
-            notificationManager.cancel(notification.getTag(), 0);
+        if (notification != null) {
+            Log.i(TAG, "On title :".concat(notification.getTitle()));
         } else {
-            Intent intent = new Intent(ACTION_FCM_MESSAGE);
-            intent.putExtra(EXTRA_FCM_MESSAGE, remoteMessage);
-            broadcastManager.sendBroadcast(intent);
+            Log.i(TAG, "not is null");
+        }
+        FirebaseMessagingPlugin.sendNotification(remoteMessage);
 
-            if (FirebaseMessagingPlugin.isForceShow()) {
-                if (notification != null) {
-                    showAlert(notification);
-                }
+        Intent intent = new Intent(ACTION_FCM_MESSAGE);
+        intent.putExtra(EXTRA_FCM_MESSAGE, remoteMessage);
+        broadcastManager.sendBroadcast(intent);
+        Log.i(TAG, "isForce :".concat(String.valueOf(FirebaseMessagingPlugin.isForceShow())));
+        if (notification != null) {
+            Log.i(TAG, "title :".concat(notification.getTitle()));
+            if (notification.getTitle().equals("1")) {
+                notificationManager.cancel(notification.getTag(), 0);
+            }
+        }
+        if (FirebaseMessagingPlugin.isForceShow()) {
+            if (notification != null) {
+                showAlert(notification);
             }
         }
     }
@@ -102,7 +110,6 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                 .setColor(defaultNotificationColor)
                 // must set priority to make sure forceShow works properly
                 .setPriority(1);
-
         notificationManager.notify(0, builder.build());
         // dismiss notification to hide icon from status bar automatically
         new Handler(getMainLooper()).postDelayed(new Runnable() {
