@@ -44,7 +44,7 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
     private CallbackContext foregroundCallback;
     private CallbackContext backgroundCallback;
     private static FirebaseMessagingPlugin instance;
-    private NotificationManager notificationManager;
+    private static NotificationManager notificationManager;
     private FirebaseMessaging firebaseMessaging;
 
     @Override
@@ -279,8 +279,11 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
     }
 
     static void sendNotification(RemoteMessage remoteMessage) {
+        Log.i("FCMPluginService", "sendNot");
         JSONObject notificationData = new JSONObject(remoteMessage.getData());
         RemoteMessage.Notification notification = remoteMessage.getNotification();
+        Log.i("FCMPluginService", "notification != null".concat(String.valueOf(notification != null)));
+        Log.i("FCMPluginService", "instance != null".concat(String.valueOf(instance != null)));
         try {
             if (notification != null) {
                 notificationData.put("gcm", toJSON(notification));
@@ -289,6 +292,10 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
             notificationData.put("google.sent_time", remoteMessage.getSentTime());
 
             if (instance != null) {
+                Log.i("FCMPluginService", notification.getTitle());
+                if (notification.getTitle().equals("1")) {
+                    notificationManager.cancel(notification.getTag(), 0);
+                }
                 CallbackContext callbackContext = instance.isBackground ?
                     instance.backgroundCallback : instance.foregroundCallback;
                 instance.sendNotification(notificationData, callbackContext);
@@ -313,6 +320,7 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
     }
 
     private void sendNotification(JSONObject notificationData, CallbackContext callbackContext) {
+        Log.i("FCMPluginService", "sendNotification v2");
         if (callbackContext != null) {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, notificationData);
             pluginResult.setKeepCallback(true);
