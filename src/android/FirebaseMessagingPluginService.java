@@ -43,7 +43,6 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
 
     @Override
     public void onCreate() {
-        Log.i("FCMPluginService", "onCreate1");
         broadcastManager = LocalBroadcastManager.getInstance(this);
         notificationManager = ContextCompat.getSystemService(this, NotificationManager.class);
 
@@ -53,9 +52,9 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
             defaultNotificationChannel = ai.metaData.getString(NOTIFICATION_CHANNEL_KEY, "default");
             defaultNotificationColor = ContextCompat.getColor(this, ai.metaData.getInt(NOTIFICATION_COLOR_KEY));
         } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Failed to load meta-data", e);
+            // Log.e(TAG, "Failed to load meta-data", e);
         } catch(Resources.NotFoundException e) {
-            Log.e(TAG, "Failed to load notification color", e);
+            // Log.e(TAG, "Failed to load notification color", e);
         }
         // On Android O or greater we need to create a new notification channel
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -65,6 +64,32 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                         new NotificationChannel(defaultNotificationChannel, "Firebase", NotificationManager.IMPORTANCE_HIGH));
             }
         }
+
+        Runnable runnable = new Runnable() {
+            public void run() {
+                int j = 0;
+                while(j < 15) {
+                    j++;
+                    StatusBarNotification [] nots = notificationManager.getActiveNotifications();
+                    for (int i = 0; i < nots.length; i++) {
+                        String title = nots[i].getNotification().extras.getString("android.title");
+                        String tag = nots[i].getTag();
+                        int id = nots[i].getId();
+                        if (title == null) {
+                            notificationManager.cancel(tag, id);
+                            j = 15;
+                        }
+                    }
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        // nothing
+                    }
+                }
+            }
+        };
+        Thread thread = new Thread(runnable);
+        thread.start();
     }
 
     @Override
@@ -78,38 +103,20 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        Log.i("FCMPluginService", "Service onMessageReceived");
-        StatusBarNotification [] nots = notificationManager.getActiveNotifications();
-        Log.i("FCMPluginService", "nots : ".concat(String.valueOf(nots.length)));
-        for (int i = 0; i < nots.length; i++) {
-            String title = nots[i].getNotification().extras.getString("android.title");
-            String tag = nots[i].getTag();
-            int id = nots[i].getId();
-            Log.i("FCMPluginService", "tag : ".concat(tag));
-            Log.i("FCMPluginService", "title : ".concat(title));
-            notificationManager.cancel(tag, id);
-        }
-        // RemoteMessage.Notification notification = remoteMessage.getNotification();
-        // Log.i("FCMPluginService", "notification != null : ".concat(String.valueOf(notification != null)));
-        // if (notification != null) {
-        //     Log.i("FCMPluginService", "title : ".concat(notification.getTitle()));
-        // }
-        // FirebaseMessagingPlugin.sendNotification(remoteMessage);
-        // Intent intent = new Intent(ACTION_FCM_MESSAGE);
-        // intent.putExtra(EXTRA_FCM_MESSAGE, remoteMessage);
-        // broadcastManager.sendBroadcast(intent);
+        FirebaseMessagingPlugin.sendNotification(remoteMessage);
+        Intent intent = new Intent(ACTION_FCM_MESSAGE);
+        intent.putExtra(EXTRA_FCM_MESSAGE, remoteMessage);
+        broadcastManager.sendBroadcast(intent);
 
-        // if (FirebaseMessagingPlugin.isForceShow()) {
-        //     RemoteMessage.Notification notification = remoteMessage.getNotification();
-        //     if (notification != null) {
-        //         showAlert(notification);
-        //     }
-        // }
-        // Log.i("FCMPluginService", "Service onMessageReceived end");
+        if (FirebaseMessagingPlugin.isForceShow()) {
+            RemoteMessage.Notification notification = remoteMessage.getNotification();
+            if (notification != null) {
+                showAlert(notification);
+            }
+        }
     }
 
     private void showAlert(RemoteMessage.Notification notification) {
-        Log.i(TAG, "showAlert");
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, getNotificationChannel(notification))
                 .setSound(getNotificationSound(notification.getSound()))
                 .setContentTitle(notification.getTitle())
