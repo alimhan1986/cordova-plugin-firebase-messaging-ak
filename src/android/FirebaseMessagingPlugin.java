@@ -313,7 +313,6 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
     }
 
     private void sendNotification(JSONObject notificationData, CallbackContext callbackContext) {
-        Log.i("FCMPluginService", "sendNotification v2");
         if (callbackContext != null) {
             PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, notificationData);
             pluginResult.setKeepCallback(true);
