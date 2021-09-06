@@ -46,9 +46,7 @@
 
 - (void)cancelNotification:(NSString*)apnsCollapseId {
     UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
-    [center removeDeliveredNotifications:@[apnsCollapseId]];
-    CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    [center removeDeliveredNotificationsWithIdentifiers:@[apnsCollapseId]];
 }
 
 - (void)clearNotifications:(CDVInvokedUrlCommand *)command {
