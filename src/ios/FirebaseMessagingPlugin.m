@@ -45,8 +45,6 @@
 }
 
 - (void)cancelNotification:(NSString*)apnsCollapseId {
-    UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
-    [center removeDeliveredNotificationsWithIdentifiers:@[apnsCollapseId]];
 }
 
 - (void)clearNotifications:(CDVInvokedUrlCommand *)command {
