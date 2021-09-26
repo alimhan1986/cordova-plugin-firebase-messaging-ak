@@ -44,7 +44,10 @@
     [[UIApplication sharedApplication] registerForRemoteNotifications];
 }
 
-- (void)cancelNotification:(NSString*)apnsCollapseId {
+- (void)cancelNotification:(CDVInvokedUrlCommand *)command {
+    UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+    NSString* id = [command.arguments objectAtIndex:0];
+    [center removeDeliveredNotificationsWithIdentifiers:@[id]];
 }
 
 - (void)clearNotifications:(CDVInvokedUrlCommand *)command {
