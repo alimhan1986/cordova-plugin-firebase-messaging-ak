@@ -88,4 +88,9 @@ module.exports = {
       exec(resolve, reject, PLUGIN_NAME, "deleteChannel", [channelId]);
     });
   },
+  onClick: function (callback) {
+    return new Promise(function (resolve, reject) {
+      exec(resolve, reject, PLUGIN_NAME, "onClick", [callback]);
+    });
+  },
 };
