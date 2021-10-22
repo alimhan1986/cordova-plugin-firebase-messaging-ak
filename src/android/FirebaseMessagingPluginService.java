@@ -21,6 +21,17 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.io.InputStream;
+import java.io.IOException;
+
 import static android.content.ContentResolver.SCHEME_ANDROID_RESOURCE;
 
 
@@ -43,6 +54,7 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
 
     @Override
     public void onCreate() {
+        Log.i(TAG, "create");
         broadcastManager = LocalBroadcastManager.getInstance(this);
         notificationManager = ContextCompat.getSystemService(this, NotificationManager.class);
 
@@ -65,31 +77,31 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
             }
         }
 
-        Runnable runnable = new Runnable() {
-            public void run() {
-                int j = 0;
-                while(j < 15) {
-                    j++;
-                    StatusBarNotification [] nots = notificationManager.getActiveNotifications();
-                    for (int i = 0; i < nots.length; i++) {
-                        String title = nots[i].getNotification().extras.getString("android.title");
-                        String tag = nots[i].getTag();
-                        int id = nots[i].getId();
-                        if (title == null) {
-                            notificationManager.cancel(tag, id);
-                            j = 15;
-                        }
-                    }
-                    try {
-                        Thread.sleep(200);
-                    } catch (InterruptedException e) {
-                        // nothing
-                    }
-                }
-            }
-        };
-        Thread thread = new Thread(runnable);
-        thread.start();
+        // Runnable runnable = new Runnable() {
+        //     public void run() {
+        //         int j = 0;
+        //         while(j < 15) {
+        //             j++;
+        //             StatusBarNotification [] nots = notificationManager.getActiveNotifications();
+        //             for (int i = 0; i < nots.length; i++) {
+        //                 String title = nots[i].getNotification().extras.getString("android.title");
+        //                 String tag = nots[i].getTag();
+        //                 int id = nots[i].getId();
+        //                 if (title == null) {
+        //                     notificationManager.cancel(tag, id);
+        //                     j = 15;
+        //                 }
+        //             }
+        //             try {
+        //                 Thread.sleep(200);
+        //             } catch (InterruptedException e) {
+        //                 // nothing
+        //             }
+        //         }
+        //     }
+        // };
+        // Thread thread = new Thread(runnable);
+        // thread.start();
     }
 
     @Override
@@ -103,16 +115,71 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        FirebaseMessagingPlugin.sendNotification(remoteMessage);
-        Intent intent = new Intent(ACTION_FCM_MESSAGE);
-        intent.putExtra(EXTRA_FCM_MESSAGE, remoteMessage);
-        broadcastManager.sendBroadcast(intent);
-
-        if (FirebaseMessagingPlugin.isForceShow()) {
-            RemoteMessage.Notification notification = remoteMessage.getNotification();
-            if (notification != null) {
-                showAlert(notification);
+        Log.i(TAG, "message--------------------------------------");
+        Log.i(TAG, "body: " + remoteMessage.getData());
+        try {
+            JSONObject data = new JSONObject(remoteMessage.getData());
+            String tag = String.join(data.getString("chatType"), data.getString("chatId"), data.getString("channelId"));
+            String eventType = data.getString("eventType");
+            // Log.i(TAG, "tag: " + tag);
+            // Log.i(TAG, "eventType: " + eventType);
+            // Log.i(TAG, "dataInData: " + dataInData);
+            // Log.i(TAG, "isDev: " + isDev);
+            // Log.i(TAG, "message: " + message);
+            if (eventType.equals("inputMessage")) {
+                String isDev = data.getString("isDev");
+                JSONObject dataInData = new JSONObject(data.getString("data"));
+                JSONObject message = new JSONObject(dataInData.getString("message"));
+                String messageType = message.getString("type");
+                String text = messageType.equals("2") ? message.getString("filename") : message.getString("text");
+                String avatar = dataInData.getString("avatar");
+                Bitmap icon = getBitmapFromURL("https://store.dev-wazzup24.com/" + avatar);
+                NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
+                    .setContentTitle(dataInData.getString("contactName") + " — " + dataInData.getString("channelName"))
+                    .setContentText(text)
+                    .setGroup(tag)
+                    .setLargeIcon(icon)
+                    .setSmallIcon(defaultNotificationIcon)
+                    .setColor(defaultNotificationColor)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                notificationManager.notify(tag, 0, builder.build());
             }
+
+            if (eventType.equals("outputMessage") || eventType.equals("clearUnanswered")) {
+                notificationManager.cancel(tag, 0);
+            }
+        } catch (JSONException e) {
+            Log.e(TAG, "onMessageReceived JSONException", e);
+        } catch (Exception e1) {
+            Log.e(TAG, "onMessageReceived Exception", e1);
+        }
+        // StatusBarNotification [] nots = notificationManager.getActiveNotifications();
+        // Log.i(TAG, "nots lenght: " + String.valueOf(nots.length));
+        FirebaseMessagingPlugin.sendNotification(remoteMessage);
+        // Intent intent = new Intent(ACTION_FCM_MESSAGE);
+        // intent.putExtra(EXTRA_FCM_MESSAGE, remoteMessage);
+        // broadcastManager.sendBroadcast(intent);
+
+        // if (FirebaseMessagingPlugin.isForceShow()) {
+        //     RemoteMessage.Notification notification = remoteMessage.getNotification();
+        //     if (notification != null) {
+        //         showAlert(notification);
+        //     }
+        // }
+    }
+
+    public static Bitmap getBitmapFromURL(String src) {
+        try {
+            URL url = new URL(src);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            Bitmap myBitmap = BitmapFactory.decodeStream(input);
+            return myBitmap;
+        } catch (IOException e) {
+            // Log exception
+            return null;
         }
     }
 

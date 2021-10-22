@@ -2,7 +2,6 @@ package by.chemerisuk.cordova.firebase;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.service.notification.StatusBarNotification;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -44,7 +43,7 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
     private CallbackContext foregroundCallback;
     private CallbackContext backgroundCallback;
     private static FirebaseMessagingPlugin instance;
-    private static NotificationManager notificationManager;
+    private NotificationManager notificationManager;
     private FirebaseMessaging firebaseMessaging;
 
     @Override
@@ -82,12 +81,6 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
     private void clearNotifications(CallbackContext callbackContext) {
         notificationManager.cancelAll();
 
-        callbackContext.success();
-    }
-
-    @CordovaMethod
-    private void cancelNotification(String tag, CallbackContext callbackContext) {
-        notificationManager.cancel(tag, 0);
         callbackContext.success();
     }
 
