@@ -271,6 +271,14 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
         this.isBackground = false;
     }
 
+    static boolean isPaused() {
+        if (instance != null) {
+            return instance.isBackground;
+        } else { 
+            return true;
+        }
+    }
+
     static void sendNotification(RemoteMessage remoteMessage) {
         JSONObject notificationData = new JSONObject(remoteMessage.getData());
         RemoteMessage.Notification notification = remoteMessage.getNotification();

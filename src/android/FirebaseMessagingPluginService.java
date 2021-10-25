@@ -3,7 +3,9 @@ package by.chemerisuk.cordova.firebase;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Notification;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
@@ -31,6 +33,8 @@ import java.net.URL;
 import java.net.HttpURLConnection;
 import java.io.InputStream;
 import java.io.IOException;
+
+import com.wazzup.mobile.MainActivity;
 
 import static android.content.ContentResolver.SCHEME_ANDROID_RESOURCE;
 
@@ -121,28 +125,51 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
             JSONObject data = new JSONObject(remoteMessage.getData());
             String tag = String.join(data.getString("chatType"), data.getString("chatId"), data.getString("channelId"));
             String eventType = data.getString("eventType");
+            boolean isPaused = FirebaseMessagingPlugin.isPaused();
             // Log.i(TAG, "tag: " + tag);
             // Log.i(TAG, "eventType: " + eventType);
             // Log.i(TAG, "dataInData: " + dataInData);
             // Log.i(TAG, "isDev: " + isDev);
             // Log.i(TAG, "message: " + message);
-            if (eventType.equals("inputMessage")) {
-                String isDev = data.getString("isDev");
-                JSONObject dataInData = new JSONObject(data.getString("data"));
-                JSONObject message = new JSONObject(dataInData.getString("message"));
-                String messageType = message.getString("type");
-                String text = messageType.equals("2") ? message.getString("filename") : message.getString("text");
-                String avatar = dataInData.getString("avatar");
-                Bitmap icon = getBitmapFromURL("https://store.dev-wazzup24.com/" + avatar);
-                NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "default")
-                    .setContentTitle(dataInData.getString("contactName") + " — " + dataInData.getString("channelName"))
-                    .setContentText(text)
-                    .setGroup(tag)
-                    .setLargeIcon(icon)
-                    .setSmallIcon(defaultNotificationIcon)
-                    .setColor(defaultNotificationColor)
-                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-                notificationManager.notify(tag, 0, builder.build());
+            if (eventType.equals("inputMessage") && isPaused) {
+                Context ctx = this;
+                Runnable runnable = new Runnable() {
+                    public void run() {
+                        try {
+                            String isDev = data.getString("isDev");
+                            JSONObject dataInData = new JSONObject(data.getString("data"));
+                            JSONObject message = new JSONObject(dataInData.getString("message"));
+                            String messageType = message.getString("type");
+                            String text = messageType.equals("2") ? message.getString("filename") : message.getString("text");
+                            String avatar = dataInData.getString("avatar");
+                            int chatUnanswered = dataInData.getInt("chatUnanswered");
+                            Bitmap icon = getBitmapFromURL("https://store.dev-wazzup24.com/" + avatar);
+                            Log.i(TAG, "chatUnanswered: " + String.valueOf(chatUnanswered));
+                            Intent intent = new Intent(ctx, MainActivity.class);
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                            PendingIntent pendingIntent = PendingIntent.getActivity(ctx, 0, intent, 0);
+
+                            NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx, "default")
+                                .setContentTitle(dataInData.getString("contactName") + " — " + dataInData.getString("channelName"))
+                                .setContentText(text)
+                                .setGroup(tag)
+                                .setLargeIcon(icon)
+                                .setSmallIcon(defaultNotificationIcon)
+                                .setColor(defaultNotificationColor)
+                                .setNumber(10)
+                                .setAutoCancel(true)
+                                // .setSilent(true)
+                                .setContentIntent(pendingIntent)
+                                .setBadgeIconType(NotificationCompat.BADGE_ICON_NONE)
+                                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                            notificationManager.notify(tag, 0, builder.build());
+                        } catch (JSONException e) {
+                            Log.e(TAG, "onMessageReceived JSONException", e);
+                        }
+                    }
+                };
+                Thread thread = new Thread(runnable);
+                thread.start();
             }
 
             if (eventType.equals("outputMessage") || eventType.equals("clearUnanswered")) {
@@ -153,6 +180,7 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
         } catch (Exception e1) {
             Log.e(TAG, "onMessageReceived Exception", e1);
         }
+        Log.i(TAG, "isPaused: " + String.valueOf(FirebaseMessagingPlugin.isPaused()));
         // StatusBarNotification [] nots = notificationManager.getActiveNotifications();
         // Log.i(TAG, "nots lenght: " + String.valueOf(nots.length));
         FirebaseMessagingPlugin.sendNotification(remoteMessage);
