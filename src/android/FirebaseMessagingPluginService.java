@@ -58,7 +58,6 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
 
     @Override
     public void onCreate() {
-        Log.i(TAG, "create");
         broadcastManager = LocalBroadcastManager.getInstance(this);
         notificationManager = ContextCompat.getSystemService(this, NotificationManager.class);
 
@@ -80,32 +79,6 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                         new NotificationChannel(defaultNotificationChannel, "Firebase", NotificationManager.IMPORTANCE_HIGH));
             }
         }
-
-        // Runnable runnable = new Runnable() {
-        //     public void run() {
-        //         int j = 0;
-        //         while(j < 15) {
-        //             j++;
-        //             StatusBarNotification [] nots = notificationManager.getActiveNotifications();
-        //             for (int i = 0; i < nots.length; i++) {
-        //                 String title = nots[i].getNotification().extras.getString("android.title");
-        //                 String tag = nots[i].getTag();
-        //                 int id = nots[i].getId();
-        //                 if (title == null) {
-        //                     notificationManager.cancel(tag, id);
-        //                     j = 15;
-        //                 }
-        //             }
-        //             try {
-        //                 Thread.sleep(200);
-        //             } catch (InterruptedException e) {
-        //                 // nothing
-        //             }
-        //         }
-        //     }
-        // };
-        // Thread thread = new Thread(runnable);
-        // thread.start();
     }
 
     @Override
@@ -119,18 +92,11 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        Log.i(TAG, "message--------------------------------------");
-        Log.i(TAG, "body: " + remoteMessage.getData());
         try {
             JSONObject data = new JSONObject(remoteMessage.getData());
             String tag = String.join(data.getString("chatType"), data.getString("chatId"), data.getString("channelId"));
             String eventType = data.getString("eventType");
             boolean isPaused = FirebaseMessagingPlugin.isPaused();
-            // Log.i(TAG, "tag: " + tag);
-            // Log.i(TAG, "eventType: " + eventType);
-            // Log.i(TAG, "dataInData: " + dataInData);
-            // Log.i(TAG, "isDev: " + isDev);
-            // Log.i(TAG, "message: " + message);
             if (eventType.equals("inputMessage") && isPaused) {
                 Context ctx = this;
                 Runnable runnable = new Runnable() {
@@ -142,9 +108,8 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                             String messageType = message.getString("type");
                             String text = messageType.equals("2") ? message.getString("filename") : message.getString("text");
                             String avatar = dataInData.getString("avatar");
-                            int chatUnanswered = dataInData.getInt("chatUnanswered");
+                            int contactUnanswered = dataInData.getInt("contactUnanswered");
                             Bitmap icon = getBitmapFromURL("https://store.dev-wazzup24.com/" + avatar);
-                            Log.i(TAG, "chatUnanswered: " + String.valueOf(chatUnanswered));
                             Intent intent = new Intent(ctx, MainActivity.class);
                             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             PendingIntent pendingIntent = PendingIntent.getActivity(ctx, 0, intent, 0);
@@ -154,14 +119,14 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                                 .setContentText(text)
                                 .setGroup(tag)
                                 .setLargeIcon(icon)
-                                .setSmallIcon(defaultNotificationIcon)
+                                .setSmallIcon(ctx.getResources().getIdentifier("icon", "drawable", ctx.getPackageName()))
                                 .setColor(defaultNotificationColor)
-                                .setNumber(10)
                                 .setAutoCancel(true)
+                                .setNumber(contactUnanswered)
+                                .setDefaults(Notification.DEFAULT_SOUND)
                                 // .setSilent(true)
                                 .setContentIntent(pendingIntent)
-                                .setBadgeIconType(NotificationCompat.BADGE_ICON_NONE)
-                                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+                                .setPriority(NotificationCompat.PRIORITY_MAX);
                             notificationManager.notify(tag, 0, builder.build());
                         } catch (JSONException e) {
                             Log.e(TAG, "onMessageReceived JSONException", e);
@@ -180,20 +145,7 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
         } catch (Exception e1) {
             Log.e(TAG, "onMessageReceived Exception", e1);
         }
-        Log.i(TAG, "isPaused: " + String.valueOf(FirebaseMessagingPlugin.isPaused()));
-        // StatusBarNotification [] nots = notificationManager.getActiveNotifications();
-        // Log.i(TAG, "nots lenght: " + String.valueOf(nots.length));
         FirebaseMessagingPlugin.sendNotification(remoteMessage);
-        // Intent intent = new Intent(ACTION_FCM_MESSAGE);
-        // intent.putExtra(EXTRA_FCM_MESSAGE, remoteMessage);
-        // broadcastManager.sendBroadcast(intent);
-
-        // if (FirebaseMessagingPlugin.isForceShow()) {
-        //     RemoteMessage.Notification notification = remoteMessage.getNotification();
-        //     if (notification != null) {
-        //         showAlert(notification);
-        //     }
-        // }
     }
 
     public static Bitmap getBitmapFromURL(String src) {
@@ -209,26 +161,6 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
             // Log exception
             return null;
         }
-    }
-
-    private void showAlert(RemoteMessage.Notification notification) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, getNotificationChannel(notification))
-                .setSound(getNotificationSound(notification.getSound()))
-                .setContentTitle(notification.getTitle())
-                .setContentText(notification.getBody())
-                .setGroup(notification.getTag())
-                .setSmallIcon(defaultNotificationIcon)
-                .setColor(defaultNotificationColor)
-                // must set priority to make sure forceShow works properly
-                .setPriority(1);
-        notificationManager.notify(0, builder.build());
-        // dismiss notification to hide icon from status bar automatically
-        new Handler(getMainLooper()).postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                notificationManager.cancel(0);
-            }
-        }, 3000);
     }
 
     private String getNotificationChannel(RemoteMessage.Notification notification) {
