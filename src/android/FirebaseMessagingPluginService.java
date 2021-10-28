@@ -108,7 +108,7 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                             String messageType = message.getString("type");
                             String text = messageType.equals("2") ? message.getString("filename") : message.getString("text");
                             String avatar = dataInData.getString("avatar");
-                            int contactUnanswered = dataInData.getInt("contactUnanswered");
+                            int chatUnanswered = dataInData.getInt("chatUnanswered");
                             Bitmap icon = getBitmapFromURL("https://store.dev-wazzup24.com/" + avatar);
                             Intent intent = new Intent(ctx, MainActivity.class);
                             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -122,7 +122,7 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                                 .setSmallIcon(ctx.getResources().getIdentifier("icon", "drawable", ctx.getPackageName()))
                                 .setColor(defaultNotificationColor)
                                 .setAutoCancel(true)
-                                .setNumber(contactUnanswered)
+                                .setNumber(chatUnanswered)
                                 .setDefaults(Notification.DEFAULT_SOUND)
                                 // .setSilent(true)
                                 .setContentIntent(pendingIntent)
