@@ -94,7 +94,8 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage remoteMessage) {
         try {
             JSONObject data = new JSONObject(remoteMessage.getData());
-            String tag = String.join(data.getString("chatType"), data.getString("chatId"), data.getString("channelId"));
+            if (data.isNull("chatType") || data.isNull("chatId") || data.isNull("channelId")) return;
+            String tag = data.getString("chatType") + data.getString("chatId") + data.getString("channelId");
             String eventType = data.getString("eventType");
             boolean isPaused = FirebaseMessagingPlugin.isPaused();
             if (eventType.equals("inputMessage") && isPaused) {
@@ -127,7 +128,16 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                                 // .setSilent(true)
                                 .setContentIntent(pendingIntent)
                                 .setPriority(NotificationCompat.PRIORITY_MAX);
-                            notificationManager.notify(tag, 0, builder.build());
+
+                            StatusBarNotification [] nots = notificationManager.getActiveNotifications();
+                            boolean hasNot = false;
+                            for (int i = 0; i < nots.length; i++) {
+                                String notTag = nots[i].getTag();
+                                if (notTag.equals(tag)) {
+                                    hasNot = true;
+                                }
+                            }
+                            if (!hasNot) notificationManager.notify(tag, 0, builder.build());
                         } catch (JSONException e) {
                             Log.e(TAG, "onMessageReceived JSONException", e);
                         }
