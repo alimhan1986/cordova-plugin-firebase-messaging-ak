@@ -85,6 +85,11 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
     }
 
     @CordovaMethod
+    private void cancelNotification(String tag, CallbackContext callbackContext) {
+        callbackContext.success();
+    }
+
+    @CordovaMethod
     private void deleteToken(CallbackContext callbackContext) {
         firebaseMessaging.deleteToken().addOnCompleteListener(cordova.getActivity(), task -> {
             if (task.isSuccessful()) {
