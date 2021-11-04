@@ -15,6 +15,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
+import android.util.Log;
 
 import java.io.Closeable;
 import java.lang.reflect.Field;
@@ -29,6 +30,7 @@ public class NotificationBadge {
     private static boolean initied;
     private static Badger badger;
     private static ComponentName componentName;
+    private static Context ctx;
 
     public interface Badger {
         void executeBadge(int badgeCount);
@@ -50,7 +52,7 @@ public class NotificationBadge {
             intent.putExtra(PACKAGENAME, componentName.getPackageName());
             intent.putExtra(CLASSNAME, componentName.getClassName());
             intent.putExtra(COUNT, badgeCount);
-            sendBroadcast(intent);
+            ctx.sendBroadcast(intent);
         }
 
         @Override
@@ -76,7 +78,7 @@ public class NotificationBadge {
             intent.putExtra(PACKAGENAME, componentName.getPackageName());
             intent.putExtra(COUNT, badgeCount);
             intent.putExtra(CLASS, componentName.getClassName());
-            sendBroadcast(intent);
+            ctx.sendBroadcast(intent);
         }
 
         @Override
@@ -99,7 +101,7 @@ public class NotificationBadge {
             intent.putExtra(INTENT_EXTRA_PACKAGENAME, componentName.getPackageName());
             intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, componentName.getClassName());
             intent.putExtra("badge_vip_count", 0);
-            sendBroadcast(intent);
+            ctx.sendBroadcast(intent);
         }
 
         @Override
@@ -120,7 +122,7 @@ public class NotificationBadge {
             intent.putExtra(INTENT_EXTRA_BADGE_COUNT, badgeCount);
             intent.putExtra(INTENT_EXTRA_PACKAGENAME, componentName.getPackageName());
             intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, componentName.getClassName());
-            sendBroadcast(intent);
+            ctx.sendBroadcast(intent);
         }
 
         @Override
@@ -138,7 +140,7 @@ public class NotificationBadge {
         @Override
         public void executeBadge(int badgeCount) {
             final Bundle localBundle = new Bundle();
-            localBundle.putString("package", ApplicationLoader.applicationContext.getPackageName());
+            localBundle.putString("package", ctx.getPackageName());
             localBundle.putString("class", componentName.getClassName());
             localBundle.putInt("badgenumber", badgeCount);
             // AndroidUtilities.runOnUIThread(() -> {
@@ -177,8 +179,8 @@ public class NotificationBadge {
             final Intent intent = new Intent(INTENT_UPDATE_SHORTCUT);
             intent.putExtra(PACKAGENAME, componentName.getPackageName());
             intent.putExtra(COUNT, badgeCount);
-            sendBroadcast(intent);
-            sendBroadcast(intent1);
+            ctx.sendBroadcast(intent);
+            ctx.sendBroadcast(intent1);
         }
 
         @Override
@@ -198,7 +200,7 @@ public class NotificationBadge {
             ContentValues contentValues = new ContentValues();
             contentValues.put(TAG, componentName.getPackageName() + "/" + componentName.getClassName());
             contentValues.put(COUNT, badgeCount);
-            ApplicationLoader.applicationContext.getContentResolver().insert(Uri.parse(CONTENT_URI), contentValues);
+            ctx.getContentResolver().insert(Uri.parse(CONTENT_URI), contentValues);
         }
 
         @Override
@@ -236,7 +238,7 @@ public class NotificationBadge {
             try {
                 Bundle extras = new Bundle();
                 extras.putInt(INTENT_EXTRA_BADGEUPGRADE_COUNT, badgeCount);
-                ApplicationLoader.applicationContext.getContentResolver().call(Uri.parse(PROVIDER_CONTENT_URI), "setAppBadgeCount", null, extras);
+                ctx.getContentResolver().call(Uri.parse(PROVIDER_CONTENT_URI), "setAppBadgeCount", null, extras);
             } catch (Throwable ignored) {
 
             }
@@ -261,7 +263,7 @@ public class NotificationBadge {
             }
 
             Uri mUri = Uri.parse(CONTENT_URI);
-            ContentResolver contentResolver = ApplicationLoader.applicationContext.getContentResolver();
+            ContentResolver contentResolver = ctx.getContentResolver();
             Cursor cursor = null;
             try {
                 cursor = contentResolver.query(mUri, CONTENT_PROJECTION, "package=?", new String[]{componentName.getPackageName()}, null);
@@ -345,7 +347,7 @@ public class NotificationBadge {
             intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, componentName.getClassName());
             intent.putExtra(INTENT_EXTRA_MESSAGE, String.valueOf(badgeCount));
             intent.putExtra(INTENT_EXTRA_SHOW_MESSAGE, badgeCount > 0);
-            sendBroadcast(intent);
+            ctx.sendBroadcast(intent);
         }
 
         private void executeBadgeByContentProvider(int badgeCount) {
@@ -354,7 +356,7 @@ public class NotificationBadge {
             }
 
             if (mQueryHandler == null) {
-                mQueryHandler = new AsyncQueryHandler(ApplicationLoader.applicationContext.getApplicationContext().getContentResolver()) {
+                mQueryHandler = new AsyncQueryHandler(ctx.getApplicationContext().getContentResolver()) {
 
                     @Override
                     public void handleMessage(Message msg) {
@@ -379,7 +381,7 @@ public class NotificationBadge {
 
         private static boolean sonyBadgeContentProviderExists() {
             boolean exists = false;
-            ProviderInfo info = ApplicationLoader.applicationContext.getPackageManager().resolveContentProvider(SONY_HOME_PROVIDER_NAME, 0);
+            ProviderInfo info = ctx.getPackageManager().resolveContentProvider(SONY_HOME_PROVIDER_NAME, 0);
             if (info != null) {
                 exists = true;
             }
@@ -395,6 +397,7 @@ public class NotificationBadge {
 
         @Override
         public void executeBadge(int badgeCount) {
+            Log.i("FCMPluginService", "xiaomi badge");
             try {
                 Class miuiNotificationClass = Class.forName("android.app.MiuiNotification");
                 Object miuiNotification = miuiNotificationClass.newInstance();
@@ -402,10 +405,11 @@ public class NotificationBadge {
                 field.setAccessible(true);
                 field.set(miuiNotification, String.valueOf(badgeCount == 0 ? "" : badgeCount));
             } catch (Throwable e) {
+                Log.i("FCMPluginService", "error");
                 final Intent localIntent = new Intent(INTENT_ACTION);
                 localIntent.putExtra(EXTRA_UPDATE_APP_COMPONENT_NAME, componentName.getPackageName() + "/" + componentName.getClassName());
                 localIntent.putExtra(EXTRA_UPDATE_APP_MSG_TEXT, String.valueOf(badgeCount == 0 ? "" : badgeCount));
-                sendBroadcast(localIntent);
+                ctx.sendBroadcast(localIntent);
             }
         }
 
@@ -451,10 +455,10 @@ public class NotificationBadge {
         @Override
         public void executeBadge(int badgeCount) {
             Intent intent = new Intent("launcher.action.CHANGE_APPLICATION_NOTIFICATION_NUM");
-            intent.putExtra("packageName", ApplicationLoader.applicationContext.getPackageName());
+            intent.putExtra("packageName",ctx.getPackageName());
             intent.putExtra("className", componentName.getClassName());
             intent.putExtra("notificationNum", badgeCount);
-            ApplicationLoader.applicationContext.sendBroadcast(intent);
+            ctx.sendBroadcast(intent);
         }
 
         @Override
@@ -478,8 +482,12 @@ public class NotificationBadge {
         BADGERS.add(VivoHomeBadger.class);
     }
 
-    public static boolean applyCount(int badgeCount) {
+    public static boolean applyCount(Context context, int badgeCount) {
+        ctx = context;
+        Log.i("FCMPluginService", "applyCount");
+        Log.i("FCMPluginService", "MANUFACTURER: " + Build.MANUFACTURER);
         try {
+            Log.i("FCMPluginService", badger.toString());
             if (badger == null && !initied) {
                 initBadger();
                 initied = true;
@@ -487,6 +495,7 @@ public class NotificationBadge {
             if (badger == null) {
                 return false;
             }
+            Log.i("FCMPluginService", badger.toString());
             badger.executeBadge(badgeCount);
             return true;
         } catch (Throwable e) {
@@ -495,8 +504,9 @@ public class NotificationBadge {
     }
 
     private static boolean initBadger() {
-        Context context = ApplicationLoader.applicationContext;
-        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
+        Log.i("FCMPluginService", "init");
+        Log.i("FCMPluginService", Build.MANUFACTURER);
+        Intent launchIntent = ctx.getPackageManager().getLaunchIntentForPackage(ctx.getPackageName());
         if (launchIntent == null) {
             return false;
         }
@@ -505,7 +515,7 @@ public class NotificationBadge {
 
         Intent intent = new Intent(Intent.ACTION_MAIN);
         intent.addCategory(Intent.CATEGORY_HOME);
-        ResolveInfo resolveInfo = context.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY);
+        ResolveInfo resolveInfo = ctx.getPackageManager().resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY);
         if (resolveInfo != null) {
             String currentHomePackage = resolveInfo.activityInfo.packageName;
             for (Class<? extends Badger> b : BADGERS) {
@@ -524,7 +534,7 @@ public class NotificationBadge {
             }
         }
 
-        List<ResolveInfo> resolveInfos = context.getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+        List<ResolveInfo> resolveInfos = ctx.getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
         if (resolveInfos != null) {
             for (int a = 0; a < resolveInfos.size(); a++) {
                 resolveInfo = resolveInfos.get(a);
@@ -546,6 +556,7 @@ public class NotificationBadge {
                 }
             }
         }
+        Log.i("FCMPluginService", Build.MANUFACTURER);
 
         if (badger == null) {
             if (Build.MANUFACTURER.equalsIgnoreCase("Xiaomi")) {

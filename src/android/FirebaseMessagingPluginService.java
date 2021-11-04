@@ -34,6 +34,8 @@ import java.net.HttpURLConnection;
 import java.io.InputStream;
 import java.io.IOException;
 
+import me.leolin.shortcutbadger.ShortcutBadger;
+
 import com.wazzup.mobile.MainActivity;
 
 import static android.content.ContentResolver.SCHEME_ANDROID_RESOURCE;
@@ -94,11 +96,13 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage remoteMessage) {
         try {
             JSONObject data = new JSONObject(remoteMessage.getData());
-            if (data.isNull("chatType") || data.isNull("chatId") || data.isNull("channelId")) return;
-            String tag = data.getString("chatType") + data.getString("chatId") + data.getString("channelId");
+            Log.i(TAG, "data: " + remoteMessage.getData());
+            boolean hasTag = !data.isNull("chatType") && !data.isNull("chatId") && !data.isNull("channelId");
+            String tag = hasTag ? data.getString("chatType") + data.getString("chatId") + data.getString("channelId") : "";
             String eventType = data.getString("eventType");
+            Log.i(TAG, eventType);
             boolean isPaused = FirebaseMessagingPlugin.isPaused();
-            if (eventType.equals("inputMessage") && isPaused) {
+            if (eventType.equals("inputMessage") && isPaused && hasTag) {
                 Context ctx = this;
                 Runnable runnable = new Runnable() {
                     public void run() {
@@ -151,18 +155,18 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                 notificationManager.cancel(tag, 0);
             }
 
-            // if (eventType.equals("counterUpdate")) {
-            //     Log.i(TAG, "counterUpdate");
-            //     Log.i(TAG, data.getString("data"));
-            //     JSONObject dataInData = new JSONObject(data.getString("data"));
-            //     int badgeCount = dataInData.getInt("counter");
-            //     Log.i(TAG, String.valueOf(badgeCount));
-            //     if (badgeCount > 0) {
-            //         ShortcutBadger.applyCount(this, badgeCount);
-            //     } else {
-            //         ShortcutBadger.removeCount(this);
-            //     }
-            // }
+            if (eventType.equals("counterUpdate")) {
+                Log.i(TAG, "counterUpdate");
+                JSONObject dataInData = new JSONObject(data.getString("data"));
+                int badgeCount = dataInData.getInt("counter");
+                Log.i(TAG, String.valueOf(badgeCount));
+                if (badgeCount > 0) {
+                    ShortcutBadger.applyCount(this, badgeCount);
+                } else {
+                    ShortcutBadger.removeCount(this);
+                }
+                NotificationBadge.applyCount(this, badgeCount);
+            }
         } catch (JSONException e) {
             Log.e(TAG, "onMessageReceived JSONException", e);
         } catch (Exception e1) {
