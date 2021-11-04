@@ -150,6 +150,19 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
             if (eventType.equals("outputMessage") || eventType.equals("clearUnanswered")) {
                 notificationManager.cancel(tag, 0);
             }
+
+            // if (eventType.equals("counterUpdate")) {
+            //     Log.i(TAG, "counterUpdate");
+            //     Log.i(TAG, data.getString("data"));
+            //     JSONObject dataInData = new JSONObject(data.getString("data"));
+            //     int badgeCount = dataInData.getInt("counter");
+            //     Log.i(TAG, String.valueOf(badgeCount));
+            //     if (badgeCount > 0) {
+            //         ShortcutBadger.applyCount(this, badgeCount);
+            //     } else {
+            //         ShortcutBadger.removeCount(this);
+            //     }
+            // }
         } catch (JSONException e) {
             Log.e(TAG, "onMessageReceived JSONException", e);
         } catch (Exception e1) {
