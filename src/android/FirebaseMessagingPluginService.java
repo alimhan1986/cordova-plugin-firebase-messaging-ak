@@ -102,6 +102,7 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
             boolean hasTag = !data.isNull("chatType") && !data.isNull("chatId") && !data.isNull("channelId");
             String tag = hasTag ? data.getString("chatType") + data.getString("chatId") + data.getString("channelId") : "";
             String eventType = data.getString("eventType");
+            Log.i(TAG, eventType);
             boolean isPaused = FirebaseMessagingPlugin.isPaused();
             if (eventType.equals("inputMessage") && isPaused && hasTag) {
                 Context ctx = this;
@@ -157,16 +158,17 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                 notificationManager.cancel(tag, 0);
             }
 
-            // if (eventType.equals("counterUpdate")) {
-            //     Context context = getApplicationContext();
-            //     JSONObject dataInData = new JSONObject(data.getString("data"));
-            //     int badgeCount = dataInData.getInt("counter");
-            //     if (badgeCount > 0) {
-            //         ShortcutBadger.applyCount(context, badgeCount);
-            //     } else {
-            //         ShortcutBadger.removeCount(context);
-            //     }
-            // }
+            if (eventType.equals("counterUpdate")) {
+                Context context = getApplicationContext();
+                JSONObject dataInData = new JSONObject(data.getString("data"));
+                int badgeCount = dataInData.getInt("counter");
+                NotificationBadge.applyCount(badgeCount);
+                // if (badgeCount > 0) {
+                //     NotificationBadge.applyCount(context, badgeCount);
+                // } else {
+                //     ShortcutBadger.removeCount(context);
+                // }
+            }
         } catch (JSONException e) {
             Log.e(TAG, "onMessageReceived JSONException", e);
         } catch (Exception e1) {

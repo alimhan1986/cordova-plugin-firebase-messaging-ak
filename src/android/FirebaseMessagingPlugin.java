@@ -42,14 +42,15 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
     private CallbackContext tokenRefreshCallback;
     private CallbackContext foregroundCallback;
     private CallbackContext backgroundCallback;
-    private static FirebaseMessagingPlugin instance;
+    public static FirebaseMessagingPlugin instance;
     private NotificationManager notificationManager;
     private FirebaseMessaging firebaseMessaging;
 
     @Override
     protected void pluginInitialize() {
         FirebaseMessagingPlugin.instance = this;
-
+        Log.i("FCMPluginService", FirebaseMessagingPlugin.instance.toString());
+        Log.i("FCMPluginService", FirebaseMessagingPlugin.instance.cordova.toString());
         firebaseMessaging = FirebaseMessaging.getInstance();
         notificationManager = getSystemService(cordova.getActivity(), NotificationManager.class);
         lastBundle = getNotificationData(cordova.getActivity().getIntent());
