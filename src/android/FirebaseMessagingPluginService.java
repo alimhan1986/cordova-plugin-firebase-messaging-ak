@@ -77,8 +77,11 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel defaultChannel = notificationManager.getNotificationChannel(defaultNotificationChannel);
             if (defaultChannel == null) {
-                notificationManager.createNotificationChannel(
-                        new NotificationChannel(defaultNotificationChannel, "Firebase", NotificationManager.IMPORTANCE_HIGH));
+                NotificationChannel mChannel = new NotificationChannel(defaultNotificationChannel, "Firebase", NotificationManager.IMPORTANCE_HIGH);
+                mChannel.setShowBadge(true);
+                notificationManager.createNotificationChannel(mChannel);
+            } else {
+                defaultChannel.setShowBadge(true);
             }
         }
     }
@@ -96,11 +99,9 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage remoteMessage) {
         try {
             JSONObject data = new JSONObject(remoteMessage.getData());
-            Log.i(TAG, "data: " + remoteMessage.getData());
             boolean hasTag = !data.isNull("chatType") && !data.isNull("chatId") && !data.isNull("channelId");
             String tag = hasTag ? data.getString("chatType") + data.getString("chatId") + data.getString("channelId") : "";
             String eventType = data.getString("eventType");
-            Log.i(TAG, eventType);
             boolean isPaused = FirebaseMessagingPlugin.isPaused();
             if (eventType.equals("inputMessage") && isPaused && hasTag) {
                 Context ctx = this;
@@ -141,6 +142,7 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                                     hasNot = true;
                                 }
                             }
+                            
                             if (!hasNot) notificationManager.notify(tag, 0, builder.build());
                         } catch (JSONException e) {
                             Log.e(TAG, "onMessageReceived JSONException", e);
@@ -155,18 +157,16 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                 notificationManager.cancel(tag, 0);
             }
 
-            if (eventType.equals("counterUpdate")) {
-                Log.i(TAG, "counterUpdate");
-                JSONObject dataInData = new JSONObject(data.getString("data"));
-                int badgeCount = dataInData.getInt("counter");
-                Log.i(TAG, String.valueOf(badgeCount));
-                if (badgeCount > 0) {
-                    ShortcutBadger.applyCount(this, badgeCount);
-                } else {
-                    ShortcutBadger.removeCount(this);
-                }
-                NotificationBadge.applyCount(this, badgeCount);
-            }
+            // if (eventType.equals("counterUpdate")) {
+            //     Context context = getApplicationContext();
+            //     JSONObject dataInData = new JSONObject(data.getString("data"));
+            //     int badgeCount = dataInData.getInt("counter");
+            //     if (badgeCount > 0) {
+            //         ShortcutBadger.applyCount(context, badgeCount);
+            //     } else {
+            //         ShortcutBadger.removeCount(context);
+            //     }
+            // }
         } catch (JSONException e) {
             Log.e(TAG, "onMessageReceived JSONException", e);
         } catch (Exception e1) {
