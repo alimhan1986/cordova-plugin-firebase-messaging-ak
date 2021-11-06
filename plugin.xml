@@ -1,7 +1,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
 xmlns:android="http://schemas.android.com/apk/res/android"
            id="cordova-plugin-firebase-messaging-ak"
-      version="6.9.2">
+      version="6.9.3">
 
     <name>FirebaseMessagingPlugin</name>
     <description>Cordova plugin for Firebase Cloud Messaging</description>
@@ -77,6 +77,24 @@ xmlns:android="http://schemas.android.com/apk/res/android"
                 </intent-filter>
             </service>
             <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="default"/>
+            <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
+            <uses-permission android:name="com.android.launcher.permission.UNINSTALL_SHORTCUT"/>
+            <uses-permission android:name="com.sec.android.provider.badge.permission.READ"/>
+            <uses-permission android:name="com.sec.android.provider.badge.permission.WRITE"/>
+            <uses-permission android:name="com.htc.launcher.permission.READ_SETTINGS"/>
+            <uses-permission android:name="com.htc.launcher.permission.UPDATE_SHORTCUT"/>
+            <uses-permission android:name="com.sonyericsson.home.permission.BROADCAST_BADGE"/>
+            <uses-permission android:name="com.sonymobile.home.permission.PROVIDER_INSERT_BADGE"/>
+            <uses-permission android:name="com.anddoes.launcher.permission.UPDATE_COUNT"/>
+            <uses-permission android:name="com.majeur.launcher.permission.UPDATE_BADGE"/>
+            <uses-permission android:name="com.huawei.android.launcher.permission.CHANGE_BADGE"/>
+            <uses-permission android:name="com.huawei.android.launcher.permission.READ_SETTINGS"/>
+            <uses-permission android:name="com.huawei.android.launcher.permission.WRITE_SETTINGS"/>
+            <uses-permission android:name="android.permission.READ_APP_BADGE"/>
+            <uses-permission android:name="com.oppo.launcher.permission.READ_SETTINGS"/>
+            <uses-permission android:name="com.oppo.launcher.permission.WRITE_SETTINGS"/>
+            <uses-permission android:name="me.everything.badger.permission.BADGE_COUNT_READ"/>
+            <uses-permission android:name="me.everything.badger.permission.BADGE_COUNT_WRITE"/>
         </config-file>
 
         <dependency id="cordova-support-android-plugin" version="~1.0.0"/>
