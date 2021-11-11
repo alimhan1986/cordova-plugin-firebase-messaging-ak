@@ -99,6 +99,7 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage remoteMessage) {
         try {
             JSONObject data = new JSONObject(remoteMessage.getData());
+            Log.i(TAG, "remoteMessage: " + remoteMessage.getData());
             boolean hasTag = !data.isNull("chatType") && !data.isNull("chatId") && !data.isNull("channelId");
             String tag = hasTag ? data.getString("chatType") + data.getString("chatId") + data.getString("channelId") : "";
             String eventType = data.getString("eventType");
@@ -108,14 +109,15 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                 Runnable runnable = new Runnable() {
                     public void run() {
                         try {
-                            String isDev = data.getString("isDev");
+                            boolean isDev = data.getBoolean("isDev");
+                            boolean makePush = data.getBoolean("makePush");
                             JSONObject dataInData = new JSONObject(data.getString("data"));
                             JSONObject message = new JSONObject(dataInData.getString("message"));
                             String messageType = message.getString("type");
                             String text = messageType.equals("2") ? message.getString("filename") : message.getString("text");
                             String avatar = dataInData.getString("avatar");
                             int chatUnanswered = dataInData.getInt("chatUnanswered");
-                            Bitmap icon = getBitmapFromURL("https://store." + (Boolean.valueOf(isDev) ? "dev-" : "") + "wazzup24.com/" + avatar);
+                            Bitmap icon = getBitmapFromURL("https://store." + (isDev ? "dev-" : "") + "wazzup24.com/" + avatar);
                             Intent intent = new Intent(ctx, MainActivity.class);
                             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             PendingIntent pendingIntent = PendingIntent.getActivity(ctx, 0, intent, 0);
@@ -137,13 +139,14 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                             StatusBarNotification [] nots = notificationManager.getActiveNotifications();
                             boolean hasNot = false;
                             for (int i = 0; i < nots.length; i++) {
+                                String text2 = nots[i].getNotification().extras.getString("android.text");
                                 String notTag = nots[i].getTag();
-                                if (notTag.equals(tag)) {
+                                if (notTag.equals(tag) && text2.equals(text)) {
                                     hasNot = true;
                                 }
                             }
                             
-                            if (!hasNot) notificationManager.notify(tag, 0, builder.build());
+                            if (!hasNot && makePush) notificationManager.notify(tag, 0, builder.build());
                         } catch (JSONException e) {
                             Log.e(TAG, "onMessageReceived JSONException", e);
                         }
