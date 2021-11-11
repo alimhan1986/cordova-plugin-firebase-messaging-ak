@@ -115,7 +115,7 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                             String text = messageType.equals("2") ? message.getString("filename") : message.getString("text");
                             String avatar = dataInData.getString("avatar");
                             int chatUnanswered = dataInData.getInt("chatUnanswered");
-                            Bitmap icon = getBitmapFromURL("https://store.dev-wazzup24.com/" + avatar);
+                            Bitmap icon = getBitmapFromURL("https://store." + (Boolean.valueOf(isDev) ? "dev-" : "") + "wazzup24.com/" + avatar);
                             Intent intent = new Intent(ctx, MainActivity.class);
                             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             PendingIntent pendingIntent = PendingIntent.getActivity(ctx, 0, intent, 0);
