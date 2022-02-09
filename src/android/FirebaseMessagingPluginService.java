@@ -16,6 +16,11 @@ import android.os.Handler;
 import android.util.Log;
 import android.service.notification.StatusBarNotification;
 
+import androidx.core.graphics.drawable.IconCompat;
+import androidx.core.app.Person;
+import androidx.core.content.pm.ShortcutInfoCompat;
+import androidx.core.content.pm.ShortcutManagerCompat;
+
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -114,6 +119,7 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                             JSONObject dataInData = new JSONObject(data.getString("data"));
                             JSONObject message = new JSONObject(dataInData.getString("message"));
                             String messageType = message.getString("type");
+                            String title = dataInData.getString("contactName") + " — " + dataInData.getString("channelName");
                             String text = messageType.equals("2") ? message.getString("filename") : message.getString("text");
                             String avatar = dataInData.getString("avatar");
                             int chatUnanswered = dataInData.getInt("chatUnanswered");
@@ -122,18 +128,62 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             PendingIntent pendingIntent = PendingIntent.getActivity(ctx, 0, intent, 0);
 
+                            if (messageType.equals("10")) {
+                                title = dataInData.getString("contactName");
+                                text = dataInData.getString("previewText");
+                            }
+
+                            // NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx, "default")
+                            //     .setContentTitle(title)
+                            //     .setContentText(text)
+                            //     .setGroup(tag)
+                            //     .setLargeIcon(icon)
+                            //     .setSmallIcon(ctx.getResources().getIdentifier("icon", "drawable", ctx.getPackageName()))
+                            //     .setColor(defaultNotificationColor)
+                            //     .setAutoCancel(true)
+                            //     .setNumber(chatUnanswered)
+                            //     .setDefaults(Notification.DEFAULT_SOUND)
+                            //     // .setSilent(true)
+                            //     .setContentIntent(pendingIntent)
+                            //     .setPriority(NotificationCompat.PRIORITY_MAX);
+
+                            Person person = new Person.Builder()
+                                .setName(title)
+                                .setIcon(IconCompat.createWithBitmap(icon))
+                                .setKey(tag)
+                                .build();
+
+                            Intent startIntent = new Intent(ctx, MainActivity.class);
+
+                            startIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startIntent.setAction(Intent.ACTION_MAIN);
+                            startIntent.setPackage(ctx.getPackageName());
+                            startIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+
+                            ShortcutInfoCompat shortcut = new ShortcutInfoCompat.Builder(ctx, tag)
+                                .setIcon(IconCompat.createWithBitmap(icon))
+                                .setIsConversation()
+                                .setLongLabel(title)
+                                .setLongLived(true)
+                                .setPerson(person)
+                                .setShortLabel(title)
+                                .setIntent(startIntent)
+                                .build();
+                            
+                            ShortcutManagerCompat.pushDynamicShortcut(ctx, shortcut);
+
                             NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx, "default")
-                                .setContentTitle(dataInData.getString("contactName") + " — " + dataInData.getString("channelName"))
-                                .setContentText(text)
                                 .setGroup(tag)
-                                .setLargeIcon(icon)
                                 .setSmallIcon(ctx.getResources().getIdentifier("icon", "drawable", ctx.getPackageName()))
                                 .setColor(defaultNotificationColor)
                                 .setAutoCancel(true)
                                 .setNumber(chatUnanswered)
                                 .setDefaults(Notification.DEFAULT_SOUND)
-                                // .setSilent(true)
                                 .setContentIntent(pendingIntent)
+                                .setLargeIcon(icon)
+                                .setStyle(new NotificationCompat.MessagingStyle(person)
+                                    .addMessage(text, System.currentTimeMillis(), person))
+                                .setShortcutId(tag)
                                 .setPriority(NotificationCompat.PRIORITY_MAX);
 
                             StatusBarNotification [] nots = notificationManager.getActiveNotifications();
@@ -149,6 +199,8 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                             if (!hasNot && makePush) notificationManager.notify(tag, 0, builder.build());
                         } catch (JSONException e) {
                             Log.e(TAG, "onMessageReceived JSONException", e);
+                        } catch (Exception e1) {
+                            Log.e(TAG, "onMessageReceived Exception", e1);
                         }
                     }
                 };
