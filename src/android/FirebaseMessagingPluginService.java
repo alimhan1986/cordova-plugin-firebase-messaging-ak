@@ -124,28 +124,11 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                             String avatar = dataInData.getString("avatar");
                             int chatUnanswered = dataInData.getInt("chatUnanswered");
                             Bitmap icon = getBitmapFromURL("https://store." + (isDev ? "dev-" : "") + "wazzup24.com/" + avatar);
-                            Intent intent = new Intent(ctx, MainActivity.class);
-                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                            PendingIntent pendingIntent = PendingIntent.getActivity(ctx, 0, intent, 0);
 
                             if (messageType.equals("10")) {
                                 title = dataInData.getString("contactName");
                                 text = dataInData.getString("previewText");
                             }
-
-                            // NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx, "default")
-                            //     .setContentTitle(title)
-                            //     .setContentText(text)
-                            //     .setGroup(tag)
-                            //     .setLargeIcon(icon)
-                            //     .setSmallIcon(ctx.getResources().getIdentifier("icon", "drawable", ctx.getPackageName()))
-                            //     .setColor(defaultNotificationColor)
-                            //     .setAutoCancel(true)
-                            //     .setNumber(chatUnanswered)
-                            //     .setDefaults(Notification.DEFAULT_SOUND)
-                            //     // .setSilent(true)
-                            //     .setContentIntent(pendingIntent)
-                            //     .setPriority(NotificationCompat.PRIORITY_MAX);
 
                             Person person = new Person.Builder()
                                 .setName(title)
@@ -159,6 +142,9 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                             startIntent.setAction(Intent.ACTION_MAIN);
                             startIntent.setPackage(ctx.getPackageName());
                             startIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+                            startIntent.putExtra("url", data.getString("chatType") + "/" + data.getString("chatId") + "/" + data.getString("channelId"));
+
+                            PendingIntent pendingIntent = PendingIntent.getActivity(ctx, 0, startIntent, 0);
 
                             ShortcutInfoCompat shortcut = new ShortcutInfoCompat.Builder(ctx, tag)
                                 .setIcon(IconCompat.createWithBitmap(icon))
@@ -212,16 +198,6 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                 notificationManager.cancel(tag, 0);
             }
 
-            // if (eventType.equals("counterUpdate")) {
-            //     Context context = getApplicationContext();
-            //     JSONObject dataInData = new JSONObject(data.getString("data"));
-            //     int badgeCount = dataInData.getInt("counter");
-            //     if (badgeCount > 0) {
-            //         ShortcutBadger.applyCount(context, badgeCount);
-            //     } else {
-            //         ShortcutBadger.removeCount(context);
-            //     }
-            // }
         } catch (JSONException e) {
             Log.e(TAG, "onMessageReceived JSONException", e);
         } catch (Exception e1) {
