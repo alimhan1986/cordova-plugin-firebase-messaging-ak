@@ -138,13 +138,12 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
 
                             Intent startIntent = new Intent(ctx, MainActivity.class);
 
-                            startIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            // startIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                             startIntent.setAction(Intent.ACTION_MAIN);
                             startIntent.setPackage(ctx.getPackageName());
                             startIntent.addCategory(Intent.CATEGORY_LAUNCHER);
                             startIntent.putExtra("url", data.getString("chatType") + "/" + data.getString("chatId") + "/" + data.getString("channelId"));
-
-                            PendingIntent pendingIntent = PendingIntent.getActivity(ctx, 0, startIntent, 0);
+                            PendingIntent pendingIntent = PendingIntent.getActivity(ctx, (int) System.currentTimeMillis(), startIntent, 0);
 
                             ShortcutInfoCompat shortcut = new ShortcutInfoCompat.Builder(ctx, tag)
                                 .setIcon(IconCompat.createWithBitmap(icon))
