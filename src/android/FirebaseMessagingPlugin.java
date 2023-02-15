@@ -88,6 +88,11 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
         callbackContext.success();
     }
 
+    @CordovaMethod
+    private void cancelNotification(String tag, CallbackContext callbackContext) {
+        callbackContext.success();
+    }
+
     @CordovaMethod(WORKER)
     private void deleteToken(CallbackContext callbackContext) throws Exception {
         await(firebaseMessaging.deleteToken());
@@ -114,6 +119,9 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
     private void onMessage(CallbackContext callbackContext) {
         instance.foregroundCallback = callbackContext;
     }
+
+    @CordovaMethod
+    private void onTapNotification(CallbackContext callbackContext) {}
 
     @CordovaMethod
     private void onBackgroundMessage(CallbackContext callbackContext) {
@@ -179,6 +187,14 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
     @Override
     public void onResume(boolean multitasking) {
         this.isBackground = false;
+    }
+
+    static boolean isPaused() {
+        if (instance != null) {
+            return instance.isBackground;
+        } else { 
+            return true;
+        }
     }
 
     static void sendNotification(RemoteMessage remoteMessage) {

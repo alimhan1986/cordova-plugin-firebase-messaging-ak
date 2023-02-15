@@ -2,7 +2,10 @@ package by.chemerisuk.cordova.firebase;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
@@ -11,6 +14,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.util.Log;
+import android.service.notification.StatusBarNotification;
+
+import androidx.core.graphics.drawable.IconCompat;
+import androidx.core.app.Person;
+import androidx.core.content.pm.ShortcutInfoCompat;
+import androidx.core.content.pm.ShortcutManagerCompat;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
@@ -20,8 +29,22 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
-import static android.content.ContentResolver.SCHEME_ANDROID_RESOURCE;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.io.InputStream;
+import java.io.IOException;
+
+import me.leolin.shortcutbadger.ShortcutBadger;
+
+import com.wazzup.mobile.MainActivity;
+
+import static android.content.ContentResolver.SCHEME_ANDROID_RESOURCE;
 
 public class FirebaseMessagingPluginService extends FirebaseMessagingService {
     private static final String TAG = "FCMPluginService";
@@ -45,7 +68,8 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
         broadcastManager = LocalBroadcastManager.getInstance(this);
         notificationManager = ContextCompat.getSystemService(this, NotificationManager.class);
         try {
-            ApplicationInfo ai = getPackageManager().getApplicationInfo(getApplicationContext().getPackageName(), PackageManager.GET_META_DATA);
+            ApplicationInfo ai = getPackageManager().getApplicationInfo(getApplicationContext().getPackageName(),
+                    PackageManager.GET_META_DATA);
             defaultNotificationIcon = ai.metaData.getInt(NOTIFICATION_ICON_KEY, ai.icon);
             defaultNotificationChannel = ai.metaData.getString(NOTIFICATION_CHANNEL_KEY, "default");
             defaultNotificationColor = ContextCompat.getColor(this, ai.metaData.getInt(NOTIFICATION_COLOR_KEY));
@@ -58,8 +82,12 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel defaultChannel = notificationManager.getNotificationChannel(defaultNotificationChannel);
             if (defaultChannel == null) {
-                notificationManager.createNotificationChannel(
-                        new NotificationChannel(defaultNotificationChannel, "Firebase", NotificationManager.IMPORTANCE_HIGH));
+                NotificationChannel mChannel = new NotificationChannel(defaultNotificationChannel, "Firebase",
+                        NotificationManager.IMPORTANCE_HIGH);
+                mChannel.setShowBadge(true);
+                notificationManager.createNotificationChannel(mChannel);
+            } else {
+                defaultChannel.setShowBadge(true);
             }
         }
     }
@@ -74,18 +102,130 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
     }
 
     @Override
-    public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
-        FirebaseMessagingPlugin.sendNotification(remoteMessage);
+    public void onMessageReceived(RemoteMessage remoteMessage) {
+        try {
+            JSONObject data = new JSONObject(remoteMessage.getData());
+            Log.i(TAG, "remoteMessage: " + remoteMessage.getData());
+            boolean hasTag = !data.isNull("chatType") && !data.isNull("chatId") && !data.isNull("channelId");
+            String tag = hasTag ? data.getString("chatType") + data.getString("chatId") + data.getString("channelId")
+                    : "";
+            String eventType = data.getString("eventType");
+            boolean isPaused = FirebaseMessagingPlugin.isPaused();
+            if (eventType.equals("inputMessage") && isPaused && hasTag) {
+                Context ctx = this;
+                Runnable runnable = new Runnable() {
+                    public void run() {
+                        try {
+                            boolean isDev = data.getBoolean("isDev");
+                            boolean makePush = data.getBoolean("makePush");
+                            JSONObject dataInData = new JSONObject(data.getString("data"));
+                            JSONObject message = new JSONObject(dataInData.getString("message"));
+                            String messageType = message.getString("type");
+                            String title = dataInData.getString("contactName") + " — "
+                                    + dataInData.getString("channelName");
+                            String text = messageType.equals("2") ? message.getString("filename")
+                                    : message.getString("text");
+                            String avatar = dataInData.getString("avatar");
+                            int chatUnanswered = dataInData.getInt("chatUnanswered");
+                            Bitmap icon = getBitmapFromURL(
+                                    "https://store." + (isDev ? "dev-" : "") + "wazzup24.com/" + avatar);
 
-        Intent intent = new Intent(ACTION_FCM_MESSAGE);
-        intent.putExtra(EXTRA_FCM_MESSAGE, remoteMessage);
-        broadcastManager.sendBroadcast(intent);
+                            if (messageType.equals("10")) {
+                                title = dataInData.getString("contactName");
+                                text = dataInData.getString("previewText");
+                            }
 
-        if (FirebaseMessagingPlugin.isForceShow()) {
-            RemoteMessage.Notification notification = remoteMessage.getNotification();
-            if (notification != null) {
-                showAlert(notification);
+                            Person person = new Person.Builder()
+                                    .setName(title)
+                                    .setIcon(IconCompat.createWithBitmap(icon))
+                                    .setKey(tag)
+                                    .build();
+
+                            Intent startIntent = new Intent(ctx, MainActivity.class);
+
+                            // startIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startIntent.setAction(Intent.ACTION_MAIN);
+                            startIntent.setPackage(ctx.getPackageName());
+                            startIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+                            startIntent.putExtra("url", data.getString("chatType") + "/" + data.getString("chatId")
+                                    + "/" + data.getString("channelId"));
+                            PendingIntent pendingIntent = PendingIntent.getActivity(ctx,
+                                    (int) System.currentTimeMillis(), startIntent, PendingIntent.FLAG_MUTABLE);
+
+                            ShortcutInfoCompat shortcut = new ShortcutInfoCompat.Builder(ctx, tag)
+                                    .setIcon(IconCompat.createWithBitmap(icon))
+                                    .setIsConversation()
+                                    .setLongLabel(title)
+                                    .setLongLived(true)
+                                    .setPerson(person)
+                                    .setShortLabel(title)
+                                    .setIntent(startIntent)
+                                    .build();
+
+                            ShortcutManagerCompat.pushDynamicShortcut(ctx, shortcut);
+
+                            NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx, "default")
+                                    .setGroup(tag)
+                                    .setSmallIcon(
+                                            ctx.getResources().getIdentifier("icon", "drawable", ctx.getPackageName()))
+                                    .setColor(defaultNotificationColor)
+                                    .setAutoCancel(true)
+                                    .setNumber(chatUnanswered)
+                                    .setDefaults(Notification.DEFAULT_SOUND)
+                                    .setContentIntent(pendingIntent)
+                                    .setLargeIcon(icon)
+                                    .setStyle(new NotificationCompat.MessagingStyle(person)
+                                            .addMessage(text, System.currentTimeMillis(), person))
+                                    .setShortcutId(tag)
+                                    .setPriority(NotificationCompat.PRIORITY_MAX);
+
+                            StatusBarNotification[] nots = notificationManager.getActiveNotifications();
+                            boolean hasNot = false;
+                            for (int i = 0; i < nots.length; i++) {
+                                String text2 = nots[i].getNotification().extras.getString("android.text");
+                                String notTag = nots[i].getTag();
+                                if (notTag.equals(tag) && text2.equals(text)) {
+                                    hasNot = true;
+                                }
+                            }
+
+                            if (!hasNot && makePush)
+                                notificationManager.notify(tag, 0, builder.build());
+                        } catch (JSONException e) {
+                            Log.e(TAG, "onMessageReceived JSONException", e);
+                        } catch (Exception e1) {
+                            Log.e(TAG, "onMessageReceived Exception", e1);
+                        }
+                    }
+                };
+                Thread thread = new Thread(runnable);
+                thread.start();
             }
+
+            if (eventType.equals("outputMessage") || eventType.equals("clearUnanswered")) {
+                notificationManager.cancel(tag, 0);
+            }
+
+        } catch (JSONException e) {
+            Log.e(TAG, "onMessageReceived JSONException", e);
+        } catch (Exception e1) {
+            Log.e(TAG, "onMessageReceived Exception", e1);
+        }
+        FirebaseMessagingPlugin.sendNotification(remoteMessage);
+    }
+
+    public static Bitmap getBitmapFromURL(String src) {
+        try {
+            URL url = new URL(src);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            Bitmap myBitmap = BitmapFactory.decodeStream(input);
+            return myBitmap;
+        } catch (IOException e) {
+            // Log exception
+            return null;
         }
     }
 
@@ -122,7 +262,8 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
         } else if (soundName.equals("default")) {
             return RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         } else {
-            return Uri.parse(SCHEME_ANDROID_RESOURCE + "://" + getApplicationContext().getPackageName() + "/raw/" + soundName);
+            return Uri.parse(
+                    SCHEME_ANDROID_RESOURCE + "://" + getApplicationContext().getPackageName() + "/raw/" + soundName);
         }
     }
 }

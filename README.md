@@ -1,8 +1,9 @@
 # Cordova plugin for [Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging/)
+
 [![NPM version][npm-version]][npm-url] [![NPM downloads][npm-downloads]][npm-url] [![NPM total downloads][npm-total-downloads]][npm-url] [![PayPal donate](https://img.shields.io/badge/paypal-donate-ff69b4?logo=paypal)][donate-url] [![Twitter][twitter-follow]][twitter-url]
 
 | [![Donate](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)][donate-url] | Your help is appreciated. Create a PR, submit a bug or just grab me :beer: |
-|-|-|
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
 
 [npm-url]: https://www.npmjs.com/package/cordova-plugin-firebase-messaging
 [npm-version]: https://img.shields.io/npm/v/cordova-plugin-firebase-messaging.svg
@@ -45,10 +46,10 @@
 
 ## Installation
 
-    $ cordova plugin add cordova-plugin-firebase-messaging
+    $ cordova plugin add cordova-plugin-firebase-messaging-ak
 
 If you get an error about CocoaPods being unable to find compatible versions, run
-    
+
     $ pod repo update
 
 Use variables `IOS_FIREBASE_POD_VERSION` and `ANDROID_FIREBASE_BOM_VERSION` to override dependency versions on Android:
@@ -57,9 +58,11 @@ Use variables `IOS_FIREBASE_POD_VERSION` and `ANDROID_FIREBASE_BOM_VERSION` to o
         --variable IOS_FIREBASE_POD_VERSION="9.3.0" \
         --variable ANDROID_FIREBASE_BOM_VERSION="30.3.1"
 
+
 ## Adding configuration files
 
 Cordova supports `resource-file` tag for easy copying resources files. Firebase SDK requires `google-services.json` on Android and `GoogleService-Info.plist` on iOS platforms.
+
 
 1. Put `google-services.json` and/or `GoogleService-Info.plist` into the root directory of your Cordova project
 2. Add new tag for Android platform
@@ -102,6 +105,7 @@ You can also define what color is used with your notification. Different android
             android:resource="@drawable/my_custom_color"/>
     </config-file>
 </platform>
+
 ```
 
 <!-- TypedocGenerated -->
@@ -160,9 +164,11 @@ Call getToken to generate a new one.
 
 ```ts
 cordova.plugins.firebase.messaging.deleteToken();
+
 ```
 
 #### Returns
+
 
 `Promise`<`void`\>
 
@@ -227,6 +233,7 @@ ___
 Registers background push notification callback.
 
 **`Example`**
+
 
 ```ts
 cordova.plugins.firebase.messaging.onBackgroundMessage(function(payload) {
@@ -315,6 +322,7 @@ Ask for permission to recieve push notifications (will trigger prompt on iOS).
 cordova.plugins.firebase.messaging.requestPermission({forceShow: false}).then(function() {
     console.log("Push messaging is allowed");
 });
+
 ```
 
 #### Parameters

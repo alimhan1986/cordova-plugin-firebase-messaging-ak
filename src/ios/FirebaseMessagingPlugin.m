@@ -44,6 +44,12 @@
     [[UIApplication sharedApplication] registerForRemoteNotifications];
 }
 
+- (void)cancelNotification:(CDVInvokedUrlCommand *)command {
+    UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+    NSString* id = [command.arguments objectAtIndex:0];
+    [center removeDeliveredNotificationsWithIdentifiers:@[id]];
+}
+
 - (void)clearNotifications:(CDVInvokedUrlCommand *)command {
     UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
     [center removeAllDeliveredNotifications];
@@ -158,6 +164,10 @@
     self.notificationCallbackId = command.callbackId;
 }
 
+- (void)onTapNotification:(CDVInvokedUrlCommand *)command {
+    self.notificationTapCallbackId = command.callbackId;
+}
+
 - (void)onBackgroundMessage:(CDVInvokedUrlCommand *)command {
     self.backgroundNotificationCallbackId = command.callbackId;
 
@@ -187,6 +197,14 @@
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.backgroundNotificationCallbackId];
     } else {
         self.lastNotification = userInfo;
+    }
+}
+
+- (void)sendUserTapToNotification:(NSDictionary *)userInfo {
+    if (self.notificationTapCallbackId) {
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:userInfo];
+        [pluginResult setKeepCallbackAsBool:YES];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:self.notificationTapCallbackId];
     }
 }
 
