@@ -21,6 +21,7 @@ import androidx.core.app.Person;
 import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -66,7 +67,6 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
     public void onCreate() {
         broadcastManager = LocalBroadcastManager.getInstance(this);
         notificationManager = ContextCompat.getSystemService(this, NotificationManager.class);
-
         try {
             ApplicationInfo ai = getPackageManager().getApplicationInfo(getApplicationContext().getPackageName(),
                     PackageManager.GET_META_DATA);
@@ -74,9 +74,9 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
             defaultNotificationChannel = ai.metaData.getString(NOTIFICATION_CHANNEL_KEY, "default");
             defaultNotificationColor = ContextCompat.getColor(this, ai.metaData.getInt(NOTIFICATION_COLOR_KEY));
         } catch (PackageManager.NameNotFoundException e) {
-            // Log.e(TAG, "Failed to load meta-data", e);
-        } catch (Resources.NotFoundException e) {
-            // Log.e(TAG, "Failed to load notification color", e);
+            Log.d(TAG, "Failed to load meta-data", e);
+        } catch(Resources.NotFoundException e) {
+            Log.d(TAG, "Failed to load notification color", e);
         }
         // On Android O or greater we need to create a new notification channel
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -93,7 +93,7 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
     }
 
     @Override
-    public void onNewToken(String token) {
+    public void onNewToken(@NonNull String token) {
         FirebaseMessagingPlugin.sendToken(token);
 
         Intent intent = new Intent(ACTION_FCM_TOKEN);
@@ -227,6 +227,24 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
             // Log exception
             return null;
         }
+    }
+
+    private void showAlert(RemoteMessage.Notification notification) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, getNotificationChannel(notification))
+                .setSound(getNotificationSound(notification.getSound()))
+                .setContentTitle(notification.getTitle())
+                .setContentText(notification.getBody())
+                .setGroup(notification.getTag())
+                .setSmallIcon(defaultNotificationIcon)
+                .setColor(defaultNotificationColor)
+                // must set priority to make sure forceShow works properly
+                .setPriority(1);
+
+        notificationManager.notify(0, builder.build());
+        // dismiss notification to hide icon from status bar automatically
+        new Handler(getMainLooper()).postDelayed(() -> {
+            notificationManager.cancel(0);
+        }, 3000);
     }
 
     private String getNotificationChannel(RemoteMessage.Notification notification) {
