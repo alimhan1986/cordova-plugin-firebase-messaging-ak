@@ -1,7 +1,7 @@
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
 xmlns:android="http://schemas.android.com/apk/res/android"
            id="cordova-plugin-firebase-messaging-ak"
-      version="7.1.2">
+      version="7.2.4">
 
     <name>FirebaseMessagingPlugin</name>
     <description>Cordova plugin for Firebase Cloud Messaging</description>
@@ -20,7 +20,7 @@ xmlns:android="http://schemas.android.com/apk/res/android"
         <engine name="cordova-ios" version=">=6.0.0"/>
     </engines>
 
-    <dependency id="cordova-plugin-firebase-analytics" version="~6.0.0"/>
+    <dependency id="cordova-plugin-firebase-analytics" version="7.0.5"/>
 
     <platform name="ios">
         <preference name="IOS_FIREBASE_MESSAGING_VERSION" default="~> 8.2.0"/>
@@ -71,7 +71,7 @@ xmlns:android="http://schemas.android.com/apk/res/android"
         </config-file>
 
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
-            <service android:name="by.chemerisuk.cordova.firebase.FirebaseMessagingPluginService">
+            <service android:exported="true" android:name="by.chemerisuk.cordova.firebase.FirebaseMessagingPluginService">
                 <intent-filter>
                     <action android:name="com.google.firebase.MESSAGING_EVENT"/>
                 </intent-filter>
@@ -79,7 +79,7 @@ xmlns:android="http://schemas.android.com/apk/res/android"
             <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="default"/>
         </config-file>
 
-        <dependency id="cordova-support-android-plugin" version="~1.0.0"/>
+        <dependency id="cordova-support-android-plugin" version="2.0.4"/>
 
         <framework src="com.google.firebase:firebase-messaging:$ANDROID_FIREBASE_MESSAGING_VERSION" />
         <framework src="androidx.core:core:$ANDROIDX_CORE_VERSION" />

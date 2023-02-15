@@ -127,6 +127,9 @@ public class FirebaseMessagingPlugin extends ReflectiveCordovaPlugin {
     }
 
     @CordovaMethod
+    private void onTapNotification(CallbackContext callbackContext) {}
+
+    @CordovaMethod
     private void onBackgroundMessage(CallbackContext callbackContext) {
         instance.backgroundCallback = callbackContext;
 

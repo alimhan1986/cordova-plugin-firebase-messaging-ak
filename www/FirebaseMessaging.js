@@ -19,6 +19,9 @@ module.exports = {
   onMessage: function (callack, error) {
     exec(callack, error, PLUGIN_NAME, "onMessage", []);
   },
+  onTapNotification: function (callack, error) {
+    exec(callack, error, PLUGIN_NAME, "onTapNotification", []);
+  },
   onBackgroundMessage: function (callack, error) {
     exec(callack, error, PLUGIN_NAME, "onBackgroundMessage", []);
   },

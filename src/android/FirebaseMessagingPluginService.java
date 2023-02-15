@@ -45,7 +45,6 @@ import com.wazzup.mobile.MainActivity;
 
 import static android.content.ContentResolver.SCHEME_ANDROID_RESOURCE;
 
-
 public class FirebaseMessagingPluginService extends FirebaseMessagingService {
     private static final String TAG = "FCMPluginService";
 
@@ -69,20 +68,22 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
         notificationManager = ContextCompat.getSystemService(this, NotificationManager.class);
 
         try {
-            ApplicationInfo ai = getPackageManager().getApplicationInfo(getApplicationContext().getPackageName(), PackageManager.GET_META_DATA);
+            ApplicationInfo ai = getPackageManager().getApplicationInfo(getApplicationContext().getPackageName(),
+                    PackageManager.GET_META_DATA);
             defaultNotificationIcon = ai.metaData.getInt(NOTIFICATION_ICON_KEY, ai.icon);
             defaultNotificationChannel = ai.metaData.getString(NOTIFICATION_CHANNEL_KEY, "default");
             defaultNotificationColor = ContextCompat.getColor(this, ai.metaData.getInt(NOTIFICATION_COLOR_KEY));
         } catch (PackageManager.NameNotFoundException e) {
             // Log.e(TAG, "Failed to load meta-data", e);
-        } catch(Resources.NotFoundException e) {
+        } catch (Resources.NotFoundException e) {
             // Log.e(TAG, "Failed to load notification color", e);
         }
         // On Android O or greater we need to create a new notification channel
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel defaultChannel = notificationManager.getNotificationChannel(defaultNotificationChannel);
             if (defaultChannel == null) {
-                NotificationChannel mChannel = new NotificationChannel(defaultNotificationChannel, "Firebase", NotificationManager.IMPORTANCE_HIGH);
+                NotificationChannel mChannel = new NotificationChannel(defaultNotificationChannel, "Firebase",
+                        NotificationManager.IMPORTANCE_HIGH);
                 mChannel.setShowBadge(true);
                 notificationManager.createNotificationChannel(mChannel);
             } else {
@@ -106,7 +107,8 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
             JSONObject data = new JSONObject(remoteMessage.getData());
             Log.i(TAG, "remoteMessage: " + remoteMessage.getData());
             boolean hasTag = !data.isNull("chatType") && !data.isNull("chatId") && !data.isNull("channelId");
-            String tag = hasTag ? data.getString("chatType") + data.getString("chatId") + data.getString("channelId") : "";
+            String tag = hasTag ? data.getString("chatType") + data.getString("chatId") + data.getString("channelId")
+                    : "";
             String eventType = data.getString("eventType");
             boolean isPaused = FirebaseMessagingPlugin.isPaused();
             if (eventType.equals("inputMessage") && isPaused && hasTag) {
@@ -119,11 +121,14 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                             JSONObject dataInData = new JSONObject(data.getString("data"));
                             JSONObject message = new JSONObject(dataInData.getString("message"));
                             String messageType = message.getString("type");
-                            String title = dataInData.getString("contactName") + " — " + dataInData.getString("channelName");
-                            String text = messageType.equals("2") ? message.getString("filename") : message.getString("text");
+                            String title = dataInData.getString("contactName") + " — "
+                                    + dataInData.getString("channelName");
+                            String text = messageType.equals("2") ? message.getString("filename")
+                                    : message.getString("text");
                             String avatar = dataInData.getString("avatar");
                             int chatUnanswered = dataInData.getInt("chatUnanswered");
-                            Bitmap icon = getBitmapFromURL("https://store." + (isDev ? "dev-" : "") + "wazzup24.com/" + avatar);
+                            Bitmap icon = getBitmapFromURL(
+                                    "https://store." + (isDev ? "dev-" : "") + "wazzup24.com/" + avatar);
 
                             if (messageType.equals("10")) {
                                 title = dataInData.getString("contactName");
@@ -131,10 +136,10 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                             }
 
                             Person person = new Person.Builder()
-                                .setName(title)
-                                .setIcon(IconCompat.createWithBitmap(icon))
-                                .setKey(tag)
-                                .build();
+                                    .setName(title)
+                                    .setIcon(IconCompat.createWithBitmap(icon))
+                                    .setKey(tag)
+                                    .build();
 
                             Intent startIntent = new Intent(ctx, MainActivity.class);
 
@@ -142,36 +147,39 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                             startIntent.setAction(Intent.ACTION_MAIN);
                             startIntent.setPackage(ctx.getPackageName());
                             startIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-                            startIntent.putExtra("url", data.getString("chatType") + "/" + data.getString("chatId") + "/" + data.getString("channelId"));
-                            PendingIntent pendingIntent = PendingIntent.getActivity(ctx, (int) System.currentTimeMillis(), startIntent, 0);
+                            startIntent.putExtra("url", data.getString("chatType") + "/" + data.getString("chatId")
+                                    + "/" + data.getString("channelId"));
+                            PendingIntent pendingIntent = PendingIntent.getActivity(ctx,
+                                    (int) System.currentTimeMillis(), startIntent, PendingIntent.FLAG_MUTABLE);
 
                             ShortcutInfoCompat shortcut = new ShortcutInfoCompat.Builder(ctx, tag)
-                                .setIcon(IconCompat.createWithBitmap(icon))
-                                .setIsConversation()
-                                .setLongLabel(title)
-                                .setLongLived(true)
-                                .setPerson(person)
-                                .setShortLabel(title)
-                                .setIntent(startIntent)
-                                .build();
-                            
+                                    .setIcon(IconCompat.createWithBitmap(icon))
+                                    .setIsConversation()
+                                    .setLongLabel(title)
+                                    .setLongLived(true)
+                                    .setPerson(person)
+                                    .setShortLabel(title)
+                                    .setIntent(startIntent)
+                                    .build();
+
                             ShortcutManagerCompat.pushDynamicShortcut(ctx, shortcut);
 
                             NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx, "default")
-                                .setGroup(tag)
-                                .setSmallIcon(ctx.getResources().getIdentifier("icon", "drawable", ctx.getPackageName()))
-                                .setColor(defaultNotificationColor)
-                                .setAutoCancel(true)
-                                .setNumber(chatUnanswered)
-                                .setDefaults(Notification.DEFAULT_SOUND)
-                                .setContentIntent(pendingIntent)
-                                .setLargeIcon(icon)
-                                .setStyle(new NotificationCompat.MessagingStyle(person)
-                                    .addMessage(text, System.currentTimeMillis(), person))
-                                .setShortcutId(tag)
-                                .setPriority(NotificationCompat.PRIORITY_MAX);
+                                    .setGroup(tag)
+                                    .setSmallIcon(
+                                            ctx.getResources().getIdentifier("icon", "drawable", ctx.getPackageName()))
+                                    .setColor(defaultNotificationColor)
+                                    .setAutoCancel(true)
+                                    .setNumber(chatUnanswered)
+                                    .setDefaults(Notification.DEFAULT_SOUND)
+                                    .setContentIntent(pendingIntent)
+                                    .setLargeIcon(icon)
+                                    .setStyle(new NotificationCompat.MessagingStyle(person)
+                                            .addMessage(text, System.currentTimeMillis(), person))
+                                    .setShortcutId(tag)
+                                    .setPriority(NotificationCompat.PRIORITY_MAX);
 
-                            StatusBarNotification [] nots = notificationManager.getActiveNotifications();
+                            StatusBarNotification[] nots = notificationManager.getActiveNotifications();
                             boolean hasNot = false;
                             for (int i = 0; i < nots.length; i++) {
                                 String text2 = nots[i].getNotification().extras.getString("android.text");
@@ -180,8 +188,9 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
                                     hasNot = true;
                                 }
                             }
-                            
-                            if (!hasNot && makePush) notificationManager.notify(tag, 0, builder.build());
+
+                            if (!hasNot && makePush)
+                                notificationManager.notify(tag, 0, builder.build());
                         } catch (JSONException e) {
                             Log.e(TAG, "onMessageReceived JSONException", e);
                         } catch (Exception e1) {
@@ -235,7 +244,8 @@ public class FirebaseMessagingPluginService extends FirebaseMessagingService {
         } else if (soundName.equals("default")) {
             return RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         } else {
-            return Uri.parse(SCHEME_ANDROID_RESOURCE + "://" + getApplicationContext().getPackageName() + "/raw/" + soundName);
+            return Uri.parse(
+                    SCHEME_ANDROID_RESOURCE + "://" + getApplicationContext().getPackageName() + "/raw/" + soundName);
         }
     }
 }

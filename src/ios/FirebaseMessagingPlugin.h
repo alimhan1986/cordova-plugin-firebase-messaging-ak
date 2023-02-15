@@ -14,13 +14,16 @@
 - (void)subscribe:(CDVInvokedUrlCommand *)command;
 - (void)unsubscribe:(CDVInvokedUrlCommand *)command;
 - (void)onMessage:(CDVInvokedUrlCommand *)command;
+- (void)onTapNotification:(CDVInvokedUrlCommand *)command;
 - (void)onBackgroundMessage:(CDVInvokedUrlCommand *)command;
 - (void)onTokenRefresh:(CDVInvokedUrlCommand *)command;
 - (void)sendToken:(NSString *)fcmToken;
 - (void)sendNotification:(NSDictionary *)userInfo;
 - (void)sendBackgroundNotification:(NSDictionary *)userInfo;
+- (void)sendUserTapToNotification:(NSDictionary *)userInfo;
 
 @property(nonatomic, copy) NSString *notificationCallbackId;
+@property(nonatomic, copy) NSString *notificationTapCallbackId;
 @property(nonatomic, copy) NSString *backgroundNotificationCallbackId;
 @property(nonatomic, copy) NSString *tokenRefreshCallbackId;
 @property(nonatomic, retain) NSDictionary *lastNotification;
